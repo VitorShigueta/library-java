@@ -1,4 +1,7 @@
 package com.example.library.dtos;
 
-public record BookRequestDTO() {
-}
+import java.math.BigDecimal;
+import java.util.Set;
+
+public record BookRequestDTO(String title, String isbn, Integer publicationYear, BigDecimal price, Long publisherId, Set<Long> authorIds
+) {}
