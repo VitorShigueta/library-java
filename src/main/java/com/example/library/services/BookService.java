@@ -39,6 +39,7 @@ public class BookService {
         Set<Author> authors = findAndValidateAuthors(dto.authorIds());
 
         Book book = new Book();
+
     }
 
     private Set<Author> findAndValidateAuthors(Set<Long> authorsIds) {
