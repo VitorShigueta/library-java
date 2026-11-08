@@ -127,4 +127,84 @@ public class BookServiceTest {
             verify(bookRepository, never()).save(any(Book.class));
         }
     }
+
+    @Nested
+    @DisplayName("findBooksById()")
+    class FindBooksByIdTests {
+
+        @Test
+        @DisplayName("Should return book response DTO when ID existis")
+        void shouldFindBookIDSuccessfully() {
+            when(bookRepository.findById(1L)).thenReturn(Optional.of(defaultSavedBook));
+
+            BookResponseDTO response = bookService.findBookById(1L);
+
+            assertNotNull(response);
+            assertAll("Validade all BookResponseDTO fields",
+                    () -> assertEquals(1L, response.id()),
+                    () -> assertEquals(defaultSavedBook.getTitle(), response.title()),
+                    () -> assertEquals(defaultSavedBook.getIsbn(), response.isbn()),
+                    () -> assertEquals(defaultSavedBook.getPublicationYear(), response.publicationYear()),
+                    () -> assertEquals(defaultSavedBook.getPrice(), response.price()),
+                    () -> assertEquals(1L, response.publisherId()),
+                    () -> assertEquals(Set.of(1L), response.authorIds())
+            );
+
+            verify(bookRepository, times(1)).findById(1L);
+        }
+
+        @Test
+        @DisplayName("Should throw ResourceNotFoundException when book is not found")
+        void shouldThrowExceptionWhenBookIsNotFound() {
+            when(bookRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThrows(ResourceNotFoundException.class, () -> bookService.findBookById(999L));
+
+            verify(bookRepository, times(1)).findById(999L);
+        }
+    }
+
+    @Nested
+    @DisplayName("updateBookById()")
+    class updateBookByidTest {
+
+        @Test
+        @DisplayName("Should update book sucessfully when book, publisher and auhtor exist")
+        void shouldUpdateBookSuccessfully() {
+            Long bookId = 1L;
+            Book existingBook = createBook(bookId, "Old Tile", "11111111111110", 2010, new BigDecimal("20.00"), defaultPublisher, Set.of(defaultAuthor));
+
+            BookRequestDTO updateDTO = new BookRequestDTO("Updated Title","9784048926669", 2020, new BigDecimal("45.00"), 1L, Set.of(1L));
+            Book updatedSavedBook = createBook(bookId, updateDTO.title(), updateDTO.isbn(), updateDTO.publicationYear(), updateDTO.price(), defaultPublisher, Set.of(defaultAuthor));
+
+            when(bookRepository.findById(bookId)).thenReturn(Optional.of(existingBook));
+            when(publisherRepository.findById(updateDTO.publisherId())).thenReturn(Optional.of(defaultPublisher));
+            when(bookRepository.save(any(Book.class))).thenReturn(updatedSavedBook);
+            when(authorRepository.findAllById(updateDTO.authorIds())).thenReturn(List.of(defaultAuthor));
+
+            BookResponseDTO responseDTO = bookService.updateBookById(bookId, updateDTO);
+
+            verify(bookRepository, times(1)).findById(bookId);
+            verify(publisherRepository, times(1)).findById(2L);
+            verify(authorRepository, times(1)).findAllById(Set.of(2L));
+            verify(bookRepository, times(1)).save(bookArgumentCaptor.capture());
+
+            Book captured = bookArgumentCaptor.getValue();
+
+            assertAll("Validation of the Book entity captured in save()",
+                    () -> assertEquals(bookId, captured.getId()),
+                    () -> assertEquals(updateDTO.title(), captured.getTitle()),
+                    () -> assertEquals(updateDTO.isbn(), captured.getIsbn()),
+                    () -> assertEquals(updateDTO.price(), captured.getPrice()),
+                    () -> assertEquals(updateDTO.publicationYear(), captured.getPublicationYear()),
+                    () -> assertEquals(updateDTO.publisherId(), captured.getPublisher().getId()),
+                    () -> assertTrue(captured.getAuthors().contains(defaultAuthor))
+            );
+
+            assertNotNull(responseDTO);
+            assertAll("Validation of all fields in the returned BookResponseDTO",
+                    () -> assertEquals());
+
+        }
+    }
 }

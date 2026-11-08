@@ -39,7 +39,43 @@ public class BookService {
         Set<Author> authors = findAndValidateAuthors(dto.authorIds());
 
         Book book = new Book();
+        book.setTitle(dto.title());
+        book.setAuthors(authors);
+        book.setPublisher(publisher);
+        book.setPrice(dto.price());
+        book.setIsbn(dto.isbn());
+        book.setPublicationYear(dto.publicationYear());
+        book.setPublisher(publisher);
 
+        Book savedBook = bookRepository.save(book);
+
+        return toResponseDTO(savedBook);
+    }
+
+    public BookResponseDTO findBookById(Long id) {
+        Book book = bookRepository.findById(id).
+                orElseThrow(() -> new ResourceNotFoundException("Book", id));
+
+        return toResponseDTO(book);
+    }
+
+    public BookResponseDTO updateBookById(Long id, BookRequestDTO dto) {
+        Book book = bookRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Book", id));
+
+        Publisher publisher = publisherRepository.findById(dto.publisherId()).orElseThrow(() -> new ResourceNotFoundException("Publisher", dto.publisherId()));
+
+        Set<Author> authors = findAndValidateAuthors(dto.authorIds());
+
+        book.setTitle(dto.title());
+        book.setIsbn(dto.isbn());
+        book.setPublicationYear(dto.publicationYear());
+        book.setPrice(dto.price());
+        book.setAuthors(authors);
+        book.setPublisher(publisher);
+
+        Book savedBook = bookRepository.save(book);
+
+        return toResponseDTO(savedBook);
     }
 
     private Set<Author> findAndValidateAuthors(Set<Long> authorsIds) {
